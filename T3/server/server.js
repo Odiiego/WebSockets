@@ -25,6 +25,8 @@ let gameState = {
   xIsNext: true,
 };
 
+const players = {};
+
 await subClient.subscribe('game-moves', (message) => {
   gameState = JSON.parse(message);
   io.emit('gameState', gameState);
@@ -40,10 +42,27 @@ function resetGame() {
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
+  if (!players.X) {
+    players.X = socket.id;
+    socket.emit('playerType', 'X');
+  } else if (!players.O) {
+    players.O = socket.id;
+    socket.emit('playerType', 'O');
+  } else {
+    socket.emit('playerType', 'spectator');
+  }
+
   socket.emit('gameState', gameState);
 
   socket.on('makeMove', (index) => {
-    if (gameState.board[index] || calculateWinner(gameState.board)) return;
+    console.log('oi');
+    if (
+      (gameState.xIsNext && socket.id == players.O) ||
+      (!gameState.xIsNext && socket.id == players.X) ||
+      gameState.board[index] ||
+      calculateWinner(gameState.board)
+    )
+      return;
 
     gameState.board[index] = gameState.xIsNext ? 'X' : 'O';
     gameState.xIsNext = !gameState.xIsNext;
@@ -59,6 +78,9 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
+
+    if (players.X === socket.id) delete players.X;
+    if (players.O === socket.id) delete players.O;
   });
 });
 
