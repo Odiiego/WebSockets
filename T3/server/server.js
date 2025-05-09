@@ -55,8 +55,9 @@ io.on('connection', (socket) => {
   socket.emit('gameState', gameState);
 
   socket.on('makeMove', (index) => {
-    console.log('oi');
     if (
+      !(players.X && players.O) ||
+      (socket.id != players.X && socket.id != players.O) ||
       (gameState.xIsNext && socket.id == players.O) ||
       (!gameState.xIsNext && socket.id == players.X) ||
       gameState.board[index] ||

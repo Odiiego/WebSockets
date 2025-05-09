@@ -37,6 +37,8 @@ function App() {
     <div>
       <h1>Multiplayer Tic-Tac-Toe</h1>
       {player ? <h2>Jogador: {player}</h2> : ''}
+      {gameState.xIsNext && player == 'X' ? 'Seu Vez' : ''}
+      {!gameState.xIsNext && player == 'O' ? 'Seu Vez' : ''}
       <div className="board">{[...Array(9)].map((_, i) => renderCell(i))}</div>
       <button onClick={() => socket.emit('restartGame')}>Restart Game</button>
     </div>
