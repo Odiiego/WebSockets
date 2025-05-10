@@ -17,71 +17,99 @@ const io = new Server(server, {
 
 const pubClient = createClient();
 const subClient = createClient();
+
 await pubClient.connect();
 await subClient.connect();
 
-let gameState = {
-  board: Array(9).fill(null),
-  xIsNext: true,
-};
-
-const players = {};
+const salas = {};
 
 await subClient.subscribe('game-moves', (message) => {
-  gameState = JSON.parse(message);
-  io.emit('gameState', gameState);
+  const payload = JSON.parse(message);
+  const { id, gameState } = payload;
+  if (salas[id]) {
+    salas[id].gameState = gameState;
+  }
+  io.to(id).emit('gameState', gameState);
 });
 
-function resetGame() {
-  gameState = {
-    board: Array(9).fill(null),
-    xIsNext: true,
-  };
+const defaultGameState = () => ({ board: Array(9).fill(null), xIsNext: true });
+
+function resetGame(sala) {
+  sala.gameState = defaultGameState();
 }
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
-  if (!players.X) {
-    players.X = socket.id;
-    socket.emit('playerType', 'X');
-  } else if (!players.O) {
-    players.O = socket.id;
-    socket.emit('playerType', 'O');
-  } else {
-    socket.emit('playerType', 'spectator');
-  }
+  let salaId;
+  const disponivel = Object.values(salas).find((s) => !s.playerB);
 
-  socket.emit('gameState', gameState);
+  if (disponivel) {
+    salaId = disponivel.id;
+    disponivel.playerB = socket.id;
+  } else {
+    salaId = Object.keys(salas).length.toString();
+    salas[salaId] = {
+      id: salaId,
+      playerA: socket.id,
+      playerB: null,
+      gameState: defaultGameState(),
+    };
+  }
+  socket.join(salaId);
+
+  const sala = salas[salaId];
+  socket.emit(
+    'updateRoom',
+    disponivel
+      ? `Você entrou na sala ${salaId}`
+      : `Você criou a sala ${salaId}`,
+  );
+
+  socket.emit('gameState', salas[salaId].gameState);
 
   socket.on('makeMove', (index) => {
-    if (
-      !(players.X && players.O) ||
-      (socket.id != players.X && socket.id != players.O) ||
-      (gameState.xIsNext && socket.id == players.O) ||
-      (!gameState.xIsNext && socket.id == players.X) ||
-      gameState.board[index] ||
-      calculateWinner(gameState.board)
-    )
-      return;
+    const sala = salas[salaId];
+    const state = sala.gameState;
 
-    gameState.board[index] = gameState.xIsNext ? 'X' : 'O';
-    gameState.xIsNext = !gameState.xIsNext;
+    const isPlayerA = socket.id === sala.playerA;
+    const isPlayerB = socket.id === sala.playerB;
+    const turnX = state.xIsNext;
 
-    pubClient.publish('game-moves', JSON.stringify(gameState));
-    io.emit('gameState', gameState);
+    if (!sala.playerA || !sala.playerB) return;
+    if (!isPlayerA && !isPlayerB) return;
+    if ((turnX && !isPlayerA) || (!turnX && isPlayerA)) return;
+    if (state.board[index] !== null) return;
+    if (calculateWinner(state.board) || isBoardFull(state.board)) return;
+
+    state.board[index] = turnX ? 'X' : 'O';
+    state.xIsNext = !turnX;
+
+    pubClient.publish(
+      'game-moves',
+      JSON.stringify({ id: salaId, gameState: state }),
+    );
+    io.to(salaId).emit('gameState', state);
   });
 
   socket.on('restartGame', () => {
-    resetGame();
-    io.emit('gameState', gameState);
+    const sala = salas[salaId];
+    resetGame(sala);
+    pubClient.publish(
+      'game-moves',
+      JSON.stringify({ id: salaId, gameState: sala.gameState }),
+    );
+    io.to(salaId).emit('gameState', sala.gameState);
   });
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
 
-    if (players.X === socket.id) delete players.X;
-    if (players.O === socket.id) delete players.O;
+    const sala = salas[salaId];
+    if (!sala) return;
+    if (sala.playerA === socket.id) sala.playerA = null;
+    if (sala.playerB === socket.id) sala.playerB = null;
+    if (!sala.playerA && !sala.playerB) delete salas[salaId];
   });
 });
 
@@ -91,7 +119,7 @@ function calculateWinner(board) {
     [3, 4, 5],
     [6, 7, 8],
     [0, 3, 6],
-    [1, 2, 4],
+    [1, 4, 7],
     [2, 5, 8],
     [0, 4, 8],
     [2, 4, 6],
@@ -109,7 +137,4 @@ function isBoardFull(board) {
 }
 
 const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
