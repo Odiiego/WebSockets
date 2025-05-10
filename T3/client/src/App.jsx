@@ -10,7 +10,6 @@ function App() {
     xIsNext: true,
     winner: null,
   });
-  const [player, setPlayer] = React.useState(undefined);
 
   React.useEffect(() => {
     socket.on('gameState', (state) => {
