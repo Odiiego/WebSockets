@@ -21,7 +21,20 @@ const subClient = createClient();
 await pubClient.connect();
 await subClient.connect();
 
+const questions = [
+  { pergunta: 'Quanto é 2+2?', opcoes: ['3', '4', '5'], respostaCorreta: '4' },
+  {
+    pergunta: 'Capital do Brasil?',
+    opcoes: ['Rio', 'Brasília', 'São Paulo'],
+    respostaCorreta: 'Brasília',
+  },
+];
+
 const salas = {};
+
+const pendingQuestions = {
+  // { salaId, index, respostaCorreta }
+};
 
 await subClient.subscribe('game-moves', (message) => {
   const payload = JSON.parse(message);
@@ -81,9 +94,33 @@ io.on('connection', (socket) => {
     if ((turnX && !isPlayerA) || (!turnX && isPlayerA)) return;
     if (state.board[index] !== null) return;
     if (calculateWinner(state.board) || isBoardFull(state.board)) return;
+    if (pendingQuestions[sala.playerA] || pendingQuestions[sala.playerB])
+      return;
 
-    state.board[index] = turnX ? 'X' : 'O';
-    state.xIsNext = !turnX;
+    const q = questions[Math.floor(Math.random() * questions.length)];
+    pendingQuestions[socket.id] = {
+      salaId,
+      index,
+      respostaCorreta: q.respostaCorreta,
+    };
+    socket.emit('askQuestion', { pergunta: q.pergunta, opcoes: q.opcoes });
+  });
+
+  socket.on('answerQuestion', (resposta) => {
+    const pending = pendingQuestions[socket.id];
+    if (!pending) return;
+    const { salaId, index, respostaCorreta } = pending;
+    delete pendingQuestions[socket.id];
+
+    const sala = salas[salaId];
+    const state = sala.gameState;
+    state.xIsNext = !state.xIsNext;
+
+    if (resposta == respostaCorreta) {
+      state.board[index] = state.xIsNext ? 'X' : 'O';
+    } else {
+      return socket.emit('wrongAnswer', 'Resposta incorreta!');
+    }
 
     pubClient.publish(
       'game-moves',
@@ -95,6 +132,12 @@ io.on('connection', (socket) => {
   socket.on('restartGame', () => {
     const sala = salas[salaId];
     resetGame(sala);
+    pubClient.publish(
+      'game-moves',
+      JSON.stringify({ id: salaId, gameState: sala.gameState }),
+    );
+    io.to(salaId).emit('gameState', sala.gameState);
+
     pubClient.publish(
       'game-moves',
       JSON.stringify({ id: salaId, gameState: sala.gameState }),
