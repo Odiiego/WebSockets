@@ -45,7 +45,13 @@ function App() {
     socket.on('questionResult', ({ playerId, correct }) => {
       // identifica se foi você ou o adversário
       const who = playerId === socket.id ? 'Você' : 'O adversário';
-      setLastResult(`${who} ${correct ? 'acertou 🎉' : 'errou 😢'}`);
+      setLastResult(
+        `${who} ${
+          correct
+            ? `acertou ${who == 'Você' ? '🎉' : '😢'}`
+            : `errou ${who == 'Você' ? '😢' : '🎉'}`
+        }`,
+      );
 
       // limpa pergunta e estado de resposta
       setTimeout(() => {
