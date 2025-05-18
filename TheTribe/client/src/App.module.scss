@@ -3,6 +3,10 @@
   padding: 0;
   box-sizing: content-box;
 }
+html,
+body {
+  overflow: hidden;
+}
 
 .container {
   display: flex;
@@ -11,75 +15,50 @@
   height: 100vh;
   width: 100vw;
 
-  .mesa {
+  .tabuleiro {
     display: grid;
-    gap: 0.5rem 1rem;
-    grid-template-areas:
-      'c . t t t'
-      'd . t t t '
-      '. . t t t ';
+    position: relative;
+    width: fit-content;
+    grid-area: t;
 
-    .deck {
-      grid-area: d;
-      height: 225px;
-      width: 125px;
-      background-color: black;
-      writing-mode: vertical-rl;
-      font-size: 3rem;
-      color: white;
-      border-radius: 0.75rem;
-      grid-area: d;
-      &:hover {
-        cursor: pointer;
-      }
+    .question {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid goldenrod;
     }
-    .coin {
-      margin: 0 auto;
-      grid-area: c;
-      border-radius: 100%;
-      border: 5px solid goldenrod;
+    .options {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      border: 1px solid goldenrod;
+    }
+
+    .casa {
+      display: flex;
+      flex-direction: column;
       width: 75px;
       height: 75px;
-      font-size: 2rem;
+      border: 1px solid black;
+      word-break: break-all;
       text-align: center;
-      &::-webkit-outer-spin-button,
-      &::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-    }
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      overflow: hidden;
 
-    .tabuleiro {
-      display: grid;
-      position: relative;
-      width: fit-content;
-      grid-area: t;
-
-      .casa {
+      span {
+        flex: 1;
         display: flex;
-        flex-direction: column;
-        width: 75px;
-        height: 75px;
-        border: 1px solid black;
-        word-break: break-all;
-        text-align: center;
-        -webkit-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        overflow: hidden;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 900;
 
-        span {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.5rem;
-          font-weight: 900;
-
-          &:hover {
-            cursor: pointer;
-            color: white;
-          }
+        &:hover {
+          cursor: pointer;
+          color: white;
         }
       }
     }
@@ -115,10 +94,10 @@
   grid-template-areas:
     'a4  a5  a6  a7  a8  a9  a10 a11 a12'
     'a3  .   .   .   .   .   .   .   a13'
-    'a2  .   .   .   .   .   .   .   a14'
-    'a1  .   .   .   .   .   .   .   a15'
-    '.   .   .   .   .   .   .   .   a16'
-    'a31 .   .   .   .   .   .   .   a17'
+    'a2  .   .   p   p   p   .   .   a14'
+    'a1  .   .   p   p   p   .   .   a15'
+    '.   .   .   o   o   o   .   .   a16'
+    'a31 .   .   o   o   o   .   .   a17'
     'a30 .   .   .   .   .   .   .   a18'
     'a29 .   .   .   .   .   .   .   a19'
     'a28 a27 a26 a25 a24 a23 a22 a21 a20';
@@ -140,11 +119,11 @@
   gap: 0.2rem;
   grid-template-areas:
     'a3  a4  a5  a6   .   .   .   .   .    .   .'
-    'a2  .   .   a7   .   .   .   .   .    .   .'
-    'a1  .   .   a8   a31 a30 a29 a28 a27  .   .'
+    'a2  p   p   a7   .   .   .   .   .    .   .'
+    'a1  p   p   a8   a31 a30 a29 a28 a27  .   .'
     '.   a10 a9  .    .   .   .   .   a24  a25 a26'
-    'a11 .   .   a18  a19 a20 a21 a22 a23  .   .'
-    'a12 .   .   a17  .   .   .   .   .    .   .'
+    'a11 o   o   a18  a19 a20 a21 a22 a23  .   .'
+    'a12 o   o   a17  .   .   .   .   .    .   .'
     'a13 a14 a15 a16  .   .   .   .   .    .   .';
   & > .casa:nth-child(1) {
     border-radius: 0 0 2rem 2rem;
@@ -194,6 +173,12 @@
 
 // registra a grid-area
 .tabuleiro {
+  .question {
+    grid-area: p;
+  }
+  .options {
+    grid-area: o;
+  }
   & > .casa:nth-child(1) {
     grid-area: a1;
   }

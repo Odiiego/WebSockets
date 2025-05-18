@@ -58,22 +58,6 @@ function App() {
             <div
               className={`${styles.tabuleiro} ${styles[gameState.board.shape]}`}
             >
-              {question && (
-                <div className="modal">
-                  <div className="modal-content">
-                    <h2>{question}</h2>
-                    <div className="options">
-                      {options.map((opt) => {
-                        return (
-                          <button key={opt} onClick={() => handleAnswer(opt)}>
-                            {opt}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
               {gameState.board.tiles.map((tile, n) => (
                 <div key={n} className={styles.casa}>
                   {tile.theme.map((theme) => (
@@ -92,6 +76,19 @@ function App() {
                   ))}
                 </div>
               ))}
+              <div className={styles.question}>
+                {question && <h2>{question}</h2>}
+              </div>
+              <div className={styles.options}>
+                {question &&
+                  options.map((opt) => {
+                    return (
+                      <button key={opt} onClick={() => handleAnswer(opt)}>
+                        {opt}
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
           </div>
         </div>
