@@ -15,24 +15,51 @@ const socket = io('http://localhost:3000');
 
 function App() {
   const [player, setPlayer] = React.useState();
-  const [gameState, setGameState] = React.useState(undefined);
+  const [gameState, setGameState] = React.useState();
   const [question, setQuestion] = React.useState(null);
   const [options, setOptions] = React.useState([]);
+  const [canAnswer, setCanAnswer] = React.useState(false);
+  const [lastResult, setLastResult] = React.useState(null);
 
   React.useEffect(() => {
     socket.on('gameState', (state) => {
       setGameState(state);
       setPlayer(socket.id === state.playerA.id ? 'playerA' : 'playerB');
+      setCanAnswer(false);
     });
 
-    socket.on('askQuestion', ({ question, options }) => {
-      setQuestion(question);
-      setOptions(options);
+    socket.on(
+      'askQuestion',
+      ({
+        question,
+        options,
+        canAnswer,
+        // currentPlayerId,
+      }) => {
+        setQuestion(question);
+        setOptions(options);
+        setCanAnswer(canAnswer);
+      },
+    );
+
+    socket.on('questionResult', ({ playerId, correct }) => {
+      // identifica se foi você ou o adversário
+      const who = playerId === socket.id ? 'Você' : 'O adversário';
+      setLastResult(`${who} ${correct ? 'acertou 🎉' : 'errou 😢'}`);
+
+      // limpa pergunta e estado de resposta
+      setTimeout(() => {
+        setLastResult(null);
+        setQuestion(null);
+        setOptions([]);
+        setCanAnswer(false);
+      }, 1000);
     });
 
     return () => {
       socket.off('gameState');
       socket.off('askQuestion');
+      socket.off('questionResult');
     };
   }, []);
 
@@ -41,8 +68,8 @@ function App() {
   };
 
   const handleAnswer = (opcao) => {
+    if (!canAnswer) return;
     socket.emit('answerQuestion', opcao);
-    setQuestion(null);
   };
 
   return (
@@ -78,16 +105,19 @@ function App() {
               ))}
               <div className={styles.question}>
                 {question && <h2>{question}</h2>}
+                {lastResult && <div className={styles.toast}>{lastResult}</div>}
               </div>
               <div className={styles.options}>
                 {question &&
-                  options.map((opt) => {
-                    return (
-                      <button key={opt} onClick={() => handleAnswer(opt)}>
-                        {opt}
-                      </button>
-                    );
-                  })}
+                  options.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => handleAnswer(opt)}
+                      disabled={!canAnswer}
+                    >
+                      {opt}
+                    </button>
+                  ))}
               </div>
             </div>
           </div>

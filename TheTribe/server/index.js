@@ -77,7 +77,21 @@ io.on('connection', (socket) => {
       tileIndex,
       correctAnswer,
     });
-    socket.emit('askQuestion', { question, options });
+
+    // Envia a mesma pergunta para os dois, mas indica quem pode responder
+    const payload = { question, options, currentPlayerId: socket.id };
+
+    // Para o jogador da vez → canAnswer = true
+    io.to(socket.id).emit('askQuestion', { ...payload, canAnswer: true });
+
+    // Para o adversário → canAnswer = false
+    const opponentId =
+      socket.id === room.state.playerA.id
+        ? room.state.playerB?.id
+        : room.state.playerA?.id;
+    if (opponentId) {
+      io.to(opponentId).emit('askQuestion', { ...payload, canAnswer: false });
+    }
   });
 
   // --- ANSWER QUESTION ---
@@ -86,11 +100,16 @@ io.on('connection', (socket) => {
     if (!pend) return;
     pendingAnswers.delete(socket.id);
 
-    const result = answer !== pend.correctAnswer;
+    const isCorrect = answer === pend.correctAnswer;
 
     // aplica a jogada
-    room.applyMove(socket.id, pend.tileIndex, result);
+    room.applyMove(socket.id, pend.tileIndex, isCorrect);
     publishMove(room.id, room.state);
+
+    io.to(room.id).emit('questionResult', {
+      playerId: socket.id,
+      correct: isCorrect,
+    });
   });
 
   // --- RESTART ---

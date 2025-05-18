@@ -33,6 +33,7 @@ export class GameRoom {
     //     ? this.state.playerA
     //     : this.state.playerB;
     // VERIFICAR SE O JOGADOR TEM A MOEDA DESEJADA
+    // VERIFICAR SE A CASA DESEJADA É EM FRENTE A POSIÇÃO ATUAL
     if (!this.state.playerB) return false;
     const isA = playerId === this.state.playerA.id;
     const isB = playerId === this.state.playerB.id;

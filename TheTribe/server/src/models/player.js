@@ -32,12 +32,12 @@ export class Player {
     return this.respostaCorreta;
   }
 
-  makeMove(tileIndex, result) {
+  makeMove(tileIndex, isCorrect) {
     this.counter++;
     if (this.counter % 5 === 0) {
       this.coins.refresh();
     }
-    if (result) return;
+    if (!isCorrect) return;
 
     this.position = tileIndex;
   }
