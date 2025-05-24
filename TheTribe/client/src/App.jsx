@@ -15,6 +15,7 @@ const socket = io('http://localhost:3000');
 
 function App() {
   const [player, setPlayer] = React.useState();
+  const [oponent, setOponent] = React.useState();
   const [gameState, setGameState] = React.useState();
   const [question, setQuestion] = React.useState(null);
   const [options, setOptions] = React.useState([]);
@@ -24,7 +25,16 @@ function App() {
   React.useEffect(() => {
     socket.on('gameState', (state) => {
       setGameState(state);
-      setPlayer(socket.id === state.playerA.id ? 'playerA' : 'playerB');
+      setPlayer(
+        socket.id === state.playerA.id
+          ? { name: 'playerA', ...state.playerA }
+          : { name: 'playerB', ...state.playerB },
+      );
+      setOponent(
+        socket.id !== state.playerA.id
+          ? { name: 'playerA', ...state.playerA }
+          : { name: 'playerB', ...state.playerB },
+      );
       setCanAnswer(false);
     });
 
@@ -80,53 +90,87 @@ function App() {
 
   return (
     <div className="App">
-      {gameState && (
-        <div>
-          <h1>{player}</h1>
-        </div>
-      )}
       {gameState ? (
         <div className={styles.container}>
-          <div className={styles.mesa}>
-            <div
-              className={`${styles.tabuleiro} ${styles[gameState.board.shape]}`}
-            >
-              {gameState.board.tiles.map((tile, n) => (
-                <div key={n} className={styles.casa}>
-                  {tile.theme.map((theme) => (
-                    <span
-                      key={theme}
-                      onClick={() => handleClick(n)}
-                      className={styles[tile[theme]]}
-                    >
-                      {gameState.playerA.position == n
-                        ? '🐭'
-                        : gameState.playerB?.position == n
-                        ? '🦊'
-                        : temas[theme]}
-                      {tile.hasPowerUp ? '⭐' : ''}
-                    </span>
-                  ))}
-                </div>
-              ))}
-              <div className={styles.question}>
-                {question && <h2>{question}</h2>}
-                {lastResult && <div className={styles.toast}>{lastResult}</div>}
-              </div>
-              <div className={styles.options}>
-                {question &&
-                  options.map((opt) => (
-                    <button
-                      key={opt}
-                      onClick={() => handleAnswer(opt)}
-                      disabled={!canAnswer}
-                    >
-                      {opt}
+          <div className={styles.playersContainer}>
+            <div className={styles.player}>
+              <span>
+                <h2 className={styles.playerName}>{player.name}</h2>
+                <div className={styles.playerCoins}>
+                  {Object.entries(player.coins).flatMap(([value]) => (
+                    <button key={`${value}`} className={styles.coin}>
+                      {value}
                     </button>
                   ))}
-              </div>
+                </div>
+              </span>
+              <span className={styles.playerIcon}>
+                {player.name === 'playerA' ? '🐭' : '🦊'}
+              </span>
             </div>
           </div>
+          <div
+            className={`${styles.tabuleiro} ${styles[gameState.board.shape]}`}
+          >
+            {gameState.board.tiles.map((tile, n) => (
+              <div key={n} className={styles.casa}>
+                {tile.theme.map((theme) => (
+                  <span
+                    key={theme}
+                    onClick={() => handleClick(n)}
+                    className={styles[tile[theme]]}
+                  >
+                    {gameState.playerA.position == n &&
+                    gameState.playerB.position == n
+                      ? '🐭🦊'
+                      : gameState.playerA.position == n
+                      ? '🐭'
+                      : gameState.playerB?.position == n
+                      ? '🦊'
+                      : temas[theme]}
+                    {tile.hasPowerUp ? '⭐' : ''}
+                  </span>
+                ))}
+              </div>
+            ))}
+            <div className={styles.question}>
+              {question && <h2>{question}</h2>}
+              {lastResult && <div className={styles.toast}>{lastResult}</div>}
+            </div>
+            <div className={styles.options}>
+              {question &&
+                options.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => handleAnswer(opt)}
+                    disabled={!canAnswer}
+                  >
+                    {opt}
+                  </button>
+                ))}
+            </div>
+          </div>
+          {oponent ? (
+            <div className={styles.playersContainer}>
+              <div className={`${styles.player} ${styles.oponent}`}>
+                <span className={styles.playerIcon}>
+                  {oponent.name === 'playerA' ? '🐭' : '🦊'}
+                </span>
+                <span>
+                  <h2 className={styles.playerName}>{oponent.name}</h2>
+                  <div className={styles.playerCoins}>
+                    {Object.entries(oponent.coins).flatMap(([value]) => (
+                      <button key={`${value}`} className={styles.coin}>
+                        {value}
+                      </button>
+                    ))}
+                  </div>
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p>Aguardando o segundo Jogador</p>
+          )}
         </div>
       ) : (
         'Carregando'

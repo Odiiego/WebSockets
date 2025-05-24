@@ -10,10 +10,61 @@ body {
 
 .container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
   width: 100vw;
+
+  .playersContainer {
+    display: flex;
+    flex-direction: column;
+    margin: 2rem;
+
+    .player {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &Icon {
+        display: flex;
+        justify-content: center;
+        width: 5rem;
+        height: 5rem;
+        align-items: center;
+        font-size: 4rem;
+        background-color: goldenrod;
+        padding: 1rem;
+        border-radius: 100%;
+        flex-grow: 0;
+      }
+
+      &Name {
+        font-size: 3.5rem;
+      }
+
+      &Coins {
+        display: flex;
+        justify-content: space-evenly;
+
+        .coin {
+          padding: 0;
+          margin: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: 1px solid black;
+          border-radius: 2rem;
+          width: 2rem;
+          height: 2rem;
+        }
+      }
+    }
+
+    .oponent {
+      margin-top: 2rem;
+    }
+  }
 
   .tabuleiro {
     display: grid;
