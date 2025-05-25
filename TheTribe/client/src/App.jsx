@@ -14,8 +14,8 @@ const temas = [
 const socket = io('http://localhost:3000');
 
 function App() {
-  const [player, setPlayer] = React.useState();
-  const [oponent, setOponent] = React.useState();
+  const [player, setPlayer] = React.useState(undefined);
+  const [oponent, setOponent] = React.useState(undefined);
   const [gameState, setGameState] = React.useState();
   const [question, setQuestion] = React.useState(null);
   const [options, setOptions] = React.useState([]);
@@ -26,14 +26,18 @@ function App() {
     socket.on('gameState', (state) => {
       setGameState(state);
       setPlayer(
-        socket.id === state.playerA.id
+        socket?.id === state.playerA.id
           ? { name: 'playerA', ...state.playerA }
-          : { name: 'playerB', ...state.playerB },
+          : state.playerB
+          ? { name: 'playerB', ...state.playerB }
+          : undefined,
       );
       setOponent(
-        socket.id !== state.playerA.id
+        socket?.id !== state.playerA.id
           ? { name: 'playerA', ...state.playerA }
-          : { name: 'playerB', ...state.playerB },
+          : state.playerB
+          ? { name: 'playerB', ...state.playerB }
+          : undefined,
       );
       setCanAnswer(false);
     });
@@ -90,28 +94,14 @@ function App() {
 
   return (
     <div className="App">
-      {gameState ? (
+      {gameState && (
         <div className={styles.container}>
-          <div className={styles.playersContainer}>
-            <div className={styles.player}>
-              <span>
-                <h2 className={styles.playerName}>{player.name}</h2>
-                <div className={styles.playerCoins}>
-                  {Object.entries(player.coins).flatMap(([value]) => (
-                    <button key={`${value}`} className={styles.coin}>
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </span>
-              <span className={styles.playerIcon}>
-                {player.name === 'playerA' ? '🐭' : '🦊'}
-              </span>
-            </div>
-          </div>
           <div
             className={`${styles.tabuleiro} ${styles[gameState.board.shape]}`}
           >
+            {console.log({ player })}
+            {console.log({ oponent })}
+
             {gameState.board.tiles.map((tile, n) => (
               <div key={n} className={styles.casa}>
                 {tile.theme.map((theme) => (
@@ -120,10 +110,10 @@ function App() {
                     onClick={() => handleClick(n)}
                     className={styles[tile[theme]]}
                   >
-                    {gameState.playerA.position == n &&
-                    gameState.playerB.position == n
+                    {gameState.playerA?.position == n &&
+                    gameState.playerB?.position == n
                       ? '🐭🦊'
-                      : gameState.playerA.position == n
+                      : gameState.playerA?.position == n
                       ? '🐭'
                       : gameState.playerB?.position == n
                       ? '🦊'
@@ -150,30 +140,7 @@ function App() {
                 ))}
             </div>
           </div>
-          {oponent ? (
-            <div className={styles.playersContainer}>
-              <div className={`${styles.player} ${styles.oponent}`}>
-                <span className={styles.playerIcon}>
-                  {oponent.name === 'playerA' ? '🐭' : '🦊'}
-                </span>
-                <span>
-                  <h2 className={styles.playerName}>{oponent.name}</h2>
-                  <div className={styles.playerCoins}>
-                    {Object.entries(oponent.coins).flatMap(([value]) => (
-                      <button key={`${value}`} className={styles.coin}>
-                        {value}
-                      </button>
-                    ))}
-                  </div>
-                </span>
-              </div>
-            </div>
-          ) : (
-            <p>Aguardando o segundo Jogador</p>
-          )}
         </div>
-      ) : (
-        'Carregando'
       )}
     </div>
   );
